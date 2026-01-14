@@ -23,7 +23,7 @@ tipo
     : 'int' | 'float' | 'string'
     ;
 
-// === COMANDOS (ATRIBUIÇÃO E I/O ===
+// === COMANDOS (ATRIBUIÇÃO E I/O) ===
 atribuicao
     : IDENTIFICADOR '=' expressao
     ;
