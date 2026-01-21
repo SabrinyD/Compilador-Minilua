@@ -23,7 +23,7 @@ tipo
     : 'int' | 'float' | 'string'
     ;
 
-// === COMANDOS (ATRIBUIÇÃO E I/O ===
+// === COMANDOS (ATRIBUIÇÃO E I/O) ===
 atribuicao
     : IDENTIFICADOR '=' expressao
     ;
@@ -94,5 +94,5 @@ NUM_INT       : [0-9]+ ;
 NUM_FLOAT     : [0-9]+ '.' [0-9]+ ;
 STRING_LIT    : '"' .*? '"' ;
 
-COMENTARIO    : '--' .*? '\r'? '\n' -> skip ;
+COMENTARIO    : '--' ~[\r\n]* -> skip ;
 WS            : [ \t\r\n]+ -> skip ;
