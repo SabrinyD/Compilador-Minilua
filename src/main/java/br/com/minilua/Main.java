@@ -1,57 +1,42 @@
 package br.com.minilua;
 
-import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.tree.ParseTree;
+// --- Importações do ANTLR ---
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.Token;
+
+// --- Importação para erros de arquivo ---
+import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) {
-        // CÓDIGO FONTE (Mude aqui para testar erros)
-        String codigo = """
-                int a;
-                float b;
-                string texto;
-                
-                a = 10;
-                b = 5.5;
-                texto = "Ola Mundo";
-                
-                -- Teste de Erro Semântico (Descomente para testar)
-                -- int x;
-                -- x = "Nao pode"; 
-                
-                if a > 5 then
-                    print(texto);
-                    b = b + 1.0;
-                else
-                    print("Menor");
-                end
-                
-                while a > 0 do
-                   print(a);
-                   a = a - 1;
-                end
-                """;
-
         try {
-            MiniLuaLexer lexer = new MiniLuaLexer(CharStreams.fromString(codigo));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            MiniLuaParser parser = new MiniLuaParser(tokens);
+            String arquivo = "teste_stress.txt";
+            CharStream cs = CharStreams.fromFileName(arquivo);
 
-            // Gera a árvore sintática
-            ParseTree tree = parser.programa();
+            // 1. Instancia o Lexer
+            MiniLuaLexer lexer = new MiniLuaLexer(cs);
 
-            if (parser.getNumberOfSyntaxErrors() > 0) {
-                System.out.println("Erro de Sintaxe detectado!");
-                return;
+            // 2. Loop para imprimir Token por Token 
+            Token t = null;
+            System.out.println("=== INICIANDO ANALISE LÉXICA ===");
+
+            while ((t = lexer.nextToken()).getType() != Token.EOF) {
+
+                // Pega o nome o nome simbólico do token (Ex: INT, IDENTIFICADOR)
+                String nomeToken = MiniLuaLexer.VOCABULARY.getSymbolicName(t.getType());
+                // Se não tiver nome (for null), pega o próprio símbolo
+                if (nomeToken == null) {
+                    nomeToken = MiniLuaLexer.VOCABULARY.getLiteralName(t.getType());
+                }
+
+                // Imprime no formato: <Tipo, "Valor", Linha>
+                System.out.println("Token: <" + nomeToken + ", \"" + t.getText() + "\", Linha: " + t.getLine() + ">");
             }
 
-            // Análise Semântica
-            System.out.println("--- Iniciando Análise Semântica ---");
-            AnalisadorSemantico semantico = new AnalisadorSemantico();
-            semantico.visit(tree);
-            System.out.println("--- Compilação Finalizada ---");
+            System.out.println("=== FIM DA LEITURA ===");
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
