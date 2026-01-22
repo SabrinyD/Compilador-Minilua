@@ -32,7 +32,7 @@ public class Main {
                     nomeToken = MiniLuaLexer.VOCABULARY.getLiteralName(t.getType());
                 }
 
-                // Imprime no formato: <Tipo, "Valor", Linha>
+                // Imprime no formato: <Tipo, "Valor", Linha, Coluna>
                 System.out.println("Token: <" + nomeToken + 
                                    ", Valor: \"" + t.getText() + "\"" +
                                    ", Linha: " + t.getLine() + 
