@@ -1,11 +1,12 @@
 package br.com.minilua;
 
-// --- Importações do ANTLR ---
+
+// --- IMPORTAÇÕES DO ANTLR ---
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.Token;
 
-// --- Importação para erros de arquivo ---
+// --- IMPORTAÇÃO DO JAVA (Para erros de arquivo) ---
 import java.io.IOException;
 
 public class Main {
@@ -17,7 +18,7 @@ public class Main {
             // 1. Instancia o Lexer
             MiniLuaLexer lexer = new MiniLuaLexer(cs);
 
-            // 2. Loop para imprimir Token por Token 
+            // 2. Loop para imprimir Token por Token (O CORAÇÃO DA ENTREGA 2)
             Token t = null;
             System.out.println("=== INICIANDO ANALISE LÉXICA ===");
 

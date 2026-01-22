@@ -1,0 +1,4 @@
+float altura = 1.75;
+float peso = 80.5;
+string frase = "Ola mundo, tudo bem?"; -- Testando espacos na string
+print(frase);

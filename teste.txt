@@ -1,0 +1,2 @@
+int x = 10;
+if x > 0 then print("Oi"); end

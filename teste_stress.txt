@@ -1,0 +1,7 @@
+int      x;      -- Muitos espacos antes
+x=10;
+
+-- Comentario de linha inteira
+        print(x); -- Comentario no final
+
+-- Fim do arquivo
