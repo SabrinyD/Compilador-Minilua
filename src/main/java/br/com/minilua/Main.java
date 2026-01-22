@@ -33,7 +33,10 @@ public class Main {
                 }
 
                 // Imprime no formato: <Tipo, "Valor", Linha>
-                System.out.println("Token: <" + nomeToken + ", \"" + t.getText() + "\", Linha: " + t.getLine() + ">");
+                System.out.println("Token: <" + nomeToken + 
+                                   ", Valor: \"" + t.getText() + "\"" +
+                                   ", Linha: " + t.getLine() + 
+                                   ", Coluna: " + t.getCharPositionInLine() + ">");
             }
 
             System.out.println("=== FIM DA LEITURA ===");
