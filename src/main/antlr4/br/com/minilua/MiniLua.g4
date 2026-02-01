@@ -1,98 +1,46 @@
 grammar MiniLua;
 
-// === ESTRUTURA PRINCIPAL ===
-programa
-    : comando* EOF
-    ;
+// --- PARSER (Sintático) ---
 
-comando
-    : declaracao ';'        # CmdDeclaracao
-    | atribuicao ';'        # CmdAtribuicao
-    | io_leitura ';'        # CmdLeitura
-    | io_escrita ';'        # CmdEscrita
-    | if_stmt               # CmdIf
-    | while_stmt            # CmdWhile
-    ;
+//Pega os tokens identificados e verifica se faz sentido
+programa : comandos EOF;
 
-// === DECLARAÇÕES ===
-declaracao
-    : tipo IDENTIFICADOR
-    ;
+comandos : comando*;
 
-tipo
-    : 'int' | 'float' | 'string'
-    ;
+comando : tipo IDENTIFICADOR ';'                        # CmdDecl
+        | IDENTIFICADOR '=' expr ';'                    # CmdAtrib
+        | IF expr THEN comandos (ELSE comandos)? END    # CmdIf
+        | PRINT '(' expr ')' ';'                        # CmdPrint
+        ;
 
-// === COMANDOS (ATRIBUIÇÃO E I/O) ===
-atribuicao
-    : IDENTIFICADOR '=' expressao
-    ;
+expr : '(' expr ')'                                  # ExprParenteses
+     | '-' expr                                      # ExprMenosUnario
+     | expr op=('*'|'/') expr                        # ExprAritmetica
+     | expr op=('+'|'-') expr                        # ExprAritmetica
+     | expr op=('>'|'<'|'>='|'<='|'=='|'!=') expr    # ExprRelacional
+     | IDENTIFICADOR                                 # ExprId
+     | literal                                       # ExprLiteral
+     ;
 
-io_leitura
-    : 'read' '(' IDENTIFICADOR ')'
-    ;
+tipo : 'int' | 'float' | 'string';
 
-io_escrita
-    : 'print' '(' expressao ')'
-    ;
+literal : NUM_INT | NUM_FLOAT | STRING_LIT;
 
-// === CONTROLE DE FLUXO ===
-if_stmt
-    : 'if' expressao 'then' bloco ('else' bloco)? 'end'
-    ;
+// --- LEXER (Léxico) ---
 
-while_stmt
-    : 'while' expressao 'do' bloco 'end'
-    ;
+INT     : 'int';
+FLOAT   : 'float';
+STRING  : 'string';
+IF      : 'if';
+THEN    : 'then';
+ELSE    : 'else';
+END     : 'end';
+PRINT   : 'print';
 
-bloco
-    : comando*
-    ;
+IDENTIFICADOR : [a-zA-Z_][a-zA-Z0-9_]*;
+NUM_INT       : [0-9]+;
+NUM_FLOAT     : [0-9]+ '.' [0-9]+;
+STRING_LIT    : '"' .*? '"';
 
-// === EXPRESSÕES (Precedência) ===
-expressao
-    : termo_logico ('or' termo_logico)*
-    ;
-
-termo_logico
-    : expressao_relacional ('and' expressao_relacional)*
-    ;
-
-expressao_relacional
-    : expressao_aditiva (op_relacional expressao_aditiva)?
-    ;
-
-op_relacional
-    : '==' | '!=' | '<' | '>' | '<=' | '>='
-    ;
-
-expressao_aditiva
-    : termo_multiplicativo (('+' | '-') termo_multiplicativo)*
-    ;
-
-termo_multiplicativo
-    : fator (('*' | '/') fator)*
-    ;
-
-fator
-   : '(' expressao ')'
-    | '!' fator           // Negação
-    | '-' fator           // Unário
-    | IDENTIFICADOR
-    | NUM_INT
-    | NUM_FLOAT
-    | STRING_LIT
-    ;
-
-// === LÉXICO ===
-IF:'if'; THEN:'then'; ELSE:'else'; END:'end';
-WHILE:'while'; DO:'do'; READ:'read'; PRINT:'print';
-INT:'int'; FLOAT:'float'; STRING:'string';
-
-IDENTIFICADOR : [a-zA-Z_] [a-zA-Z0-9_]* ;
-NUM_INT       : [0-9]+ ;
-NUM_FLOAT     : [0-9]+ '.' [0-9]+ ;
-STRING_LIT    : '"' .*? '"' ;
-
-COMENTARIO    : '--' ~[\r\n]* -> skip ;
-WS            : [ \t\r\n]+ -> skip ;
+WS          : [ \t\r\n]+ -> skip;
+COMENTARIO  : '--' ~[\r\n]* -> skip;

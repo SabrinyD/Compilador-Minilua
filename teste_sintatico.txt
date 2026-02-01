@@ -1,0 +1,6 @@
+int x     -- ERRO: Faltou ponto e vírgula
+float y;
+
+if x > 10 -- ERRO: Faltou o 'then'
+    y = 5;
+-- ERRO: Faltou o 'end'

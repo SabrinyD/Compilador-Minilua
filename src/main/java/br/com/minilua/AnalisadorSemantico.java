@@ -1,90 +1,106 @@
 package br.com.minilua;
 
-public class AnalisadorSemantico extends MiniLuaBaseVisitor<Void> {
+// Importa classes geradas pelo ANTLR e o utilitário de árvore
+import org.antlr.v4.runtime.tree.TerminalNode;
+
+// Classe BaseVisitor
+public class AnalisadorSemantico extends MiniLuaBaseVisitor<String> { //retorna tipo do dado
 
     private TabelaDeSimbolos tabela = new TabelaDeSimbolos();
 
-    // === REGRA 1: DECLARAÇÃO ===
+    // 1. DECLARAÇÃO DE VARIÁVEIS (Ex: int x;)
     @Override
-    public Void visitDeclaracao(MiniLuaParser.DeclaracaoContext ctx) {
-        String nomeVar = ctx.IDENTIFICADOR().getText();
-        String tipoVar = ctx.tipo().getText();
+    public String visitCmdDecl(MiniLuaParser.CmdDeclContext ctx) {
+        // Pega o tipo e o nome
+        String tipo = ctx.tipo().getText();
+        String nome = ctx.IDENTIFICADOR().getText();
 
-        // 1. Verifica duplicidade (Escopo Global único)
-        if (tabela.existe(nomeVar)) {
-            System.err.println("Erro Semântico (Linha " + ctx.start.getLine() + "): Variável '" + nomeVar + "' já declarada.");
+        // Regra: Não pode declarar a mesma variável duas vezes
+        if (tabela.contem(nome)) {
+            System.out.println("Erro Semântico: Variável '" + nome + "' já existe.");
         } else {
-            // 2. Guarda na memória (Ação adSimb)
-            tabela.adicionar(nomeVar, tipoVar);
+            tabela.adicionar(nome, tipo);
+            //Mensagem para confirmar declaração da variável
+            System.out.println("Declaração da variável '" + nome + "' do tipo " + tipo);
         }
-        return super.visitDeclaracao(ctx);
+        return null;
     }
 
-    // === REGRA 2: ATRIBUIÇÃO E CHECAGEM DE TIPOS ===
+    // 2. ATRIBUIÇÃO (Ex: x = 10;)
     @Override
-    public Void visitAtribuicao(MiniLuaParser.AtribuicaoContext ctx) {
-        String nomeVar = ctx.IDENTIFICADOR().getText();
+    public String visitCmdAtrib(MiniLuaParser.CmdAtribContext ctx) {
+        // Pega o nome da variável
+        String nome = ctx.IDENTIFICADOR().getText();
 
-        // 1. Verifica se a variável existe
-        if (!tabela.existe(nomeVar)) {
-            System.err.println("Erro Semântico (Linha " + ctx.start.getLine() + "): Variável '" + nomeVar + "' não foi declarada.");
-            return null;
+        // Regra: A variável precisa existir
+        if (!tabela.contem(nome)) {
+            System.out.println("Erro Semântico (Linha " + ctx.start.getLine() + "): A variável '" + nome + "' não foi declarada.");            return null; // Para aqui para não causar mais erros
         }
 
-        String tipoVariavel = tabela.verificarTipo(nomeVar);
+        // Regra: O tipo do valor deve ser igual ao tipo da variável
+        String tipoVariavel = tabela.getTipo(nome);
 
-        // 2. Infere o tipo da expressão que está sendo atribuída
-        String tipoExpressao = verificarTipoExpressao(ctx.expressao());
+        // Calcula o tipo do valor que é atribuído
+        String tipoExpressao = visit(ctx.expr());
 
-        // 3. Verifica compatibilidade (Regra de Ouro)
-        if (!tiposCompativeis(tipoVariavel, tipoExpressao)) {
-            System.err.println("Erro Semântico (Linha " + ctx.start.getLine() + "): " +
-                    "Tentando atribuir " + tipoExpressao + " para variável '" + nomeVar + "' (" + tipoVariavel + ").");
-        }
+        // Se houve erro na expressão, para
+        if ("erro".equals(tipoExpressao)) return null;
 
-        return super.visitAtribuicao(ctx);
-    }
-
-    // === REGRA 3: USO DE VARIÁVEL EM EXPRESSÕES ===
-    // Precisamos garantir que variáveis usadas em contas (ex: y = x + 1) existem
-    @Override
-    public Void visitFator(MiniLuaParser.FatorContext ctx) {
-        if (ctx.IDENTIFICADOR() != null) {
-            String nomeVar = ctx.IDENTIFICADOR().getText();
-            if (!tabela.existe(nomeVar)) {
-                System.err.println("Erro Semântico (Linha " + ctx.start.getLine() + "): Variável '" + nomeVar + "' usada sem declarar.");
+        // Verifica a compatibilidade
+        if (tipoExpressao != null && !tipoVariavel.equals(tipoExpressao)) {
+            // Float aceitar int (caso especial)
+            if (tipoVariavel.equals("float") && tipoExpressao.equals("int")) {
+                // Mensagem para confirmar atribuição válida
+                System.out.println("Atribuição válida (Coerção int->float): " + nome + " = " + tipoExpressao);
+                return null;
             }
+
+            System.out.println("Erro Semântico (Linha " + ctx.start.getLine() + "): Atribuição incompatível. A variável '" + nome +
+                    "' é " + tipoVariavel + ", mas recebeu " + tipoExpressao + ".");
+        } else {
+            // Mensagem para confirmar que a atribuição é válida:
+            System.out.println("Atribuição válida: " + nome + " (" + tipoVariavel + ") = " + tipoExpressao);
         }
-        return super.visitFator(ctx);
+
+        return null;
     }
 
-    // --- MÉTODOS AUXILIARES ---
+    // 3. EXPRESSÕES (Para descobrir os tipos)
+    // Quando encontra um número/texto
+    @Override
+    public String visitExprLiteral(MiniLuaParser.ExprLiteralContext ctx) {
+        if (ctx.literal().NUM_INT() != null) return "int";
+        if (ctx.literal().NUM_FLOAT() != null) return "float";
+        if (ctx.literal().STRING_LIT() != null) return "string";
+        return null;
+    }
 
-    // Lógica simplificada para descobrir o tipo de uma expressão
-    private String verificarTipoExpressao(MiniLuaParser.ExpressaoContext ctx) {
-        String texto = ctx.getText();
+    // Quando encontra uma variável no meio da conta (ex: y + 2)
+    @Override
+    public String visitExprId(MiniLuaParser.ExprIdContext ctx) {
+        String nome = ctx.IDENTIFICADOR().getText();
+        if (!tabela.contem(nome)) {
+            System.out.println("Erro Semântico (Linha " + ctx.start.getLine() + "): Variável '" + nome + "' usada sem ser declarada.");            return "erro";
+        }
+        return tabela.getTipo(nome); // Retorna o tipo da variável
+    }
 
-        // Se tem aspas, é string
-        if (texto.contains("\"")) return "string";
+    // Quando encontra operações matemáticas
+    @Override
+    public String visitExprAritmetica(MiniLuaParser.ExprAritmeticaContext ctx) {
+        // Verifica os dois lados da operação
+        String esquerda = visit(ctx.expr(0));
+        String direita = visit(ctx.expr(1));
 
-        // Se tem ponto, ou operações de divisão, assumimos float
-        if (texto.contains(".") || texto.contains("/")) return "float";
+        // Regra: Não pode somar texto com número
+        if ("string".equals(esquerda) || "string".equals(direita)) {
+            System.out.println("Erro Semântico: Não é possível fazer contas com Strings.");            return "erro";
+        }
 
-        // Se tem true/false ou operadores lógicos/relacionais
-        if (texto.contains("true") || texto.contains("false") ||
-                texto.contains(">") || texto.contains("==")) return "boolean"; // (interno)
-
-        // Caso contrário, assumimos int (simplificação para o trabalho)
+        // Se um dos dois for float, o resultado é float. Se ambos são int, o resultado int.
+        if ("float".equals(esquerda) || "float".equals(direita)) {
+            return "float";
+        }
         return "int";
-    }
-
-    private boolean tiposCompativeis(String tipoVar, String tipoExpr) {
-        // Regra simples: Tipos iguais são compatíveis
-        if (tipoVar.equals(tipoExpr)) return true;
-
-        // Regra de coerção: Float aceita Int
-        if (tipoVar.equals("float") && tipoExpr.equals("int")) return true;
-
-        return false;
     }
 }

@@ -4,23 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TabelaDeSimbolos {
-    // Mapa: Nome da Variável -> Tipo (ex: "x" -> "int")
+    // Mapa para guardar Nome da Variável, Tipo da Variável
     private Map<String, String> tabela = new HashMap<>();
 
-    // O famoso método "adSimb" sugerido nas fontes
-    public boolean adicionar(String nome, String tipo) {
-        if (tabela.containsKey(nome)) {
-            return false; // Erro: já existe
-        }
+    // Adiciona uma variável na memória
+    public void adicionar(String nome, String tipo) {
         tabela.put(nome, tipo);
-        return true; // Sucesso
     }
 
-    public boolean existe(String nome) {
+    // Verifica se a variável já existe
+    public boolean contem(String nome) {
         return tabela.containsKey(nome);
     }
 
-    public String verificarTipo(String nome) {
+    // Retorna o tipo da variável
+    public String getTipo(String nome) {
         return tabela.get(nome);
     }
 }

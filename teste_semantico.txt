@@ -1,0 +1,6 @@
+int x;
+int x;      -- ERRO: Declaração dupla
+float altura;
+
+altura = "alto"; -- ERRO: String em float
+y = 10;          -- ERRO: Variável não declarada
