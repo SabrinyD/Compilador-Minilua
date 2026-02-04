@@ -1,15 +1,14 @@
 package br.com.minilua;
 
 // --- Importações do ANTLR ---
-import org.antlr.v4.runtime.CharStream; // Define o tipo de dado para o fluxo de entrada
-import org.antlr.v4.runtime.CharStreams; // Ferramenta que lê o arquivo de texto e transforma em CharStram
-import org.antlr.v4.runtime.CommonTokenStream; // Armazena os tokens gerados pelo Lexer
-import org.antlr.v4.runtime.Token; // Guarda o Tipo, Texto e Linha
-import org.antlr.v4.runtime.tree.ParseTree; // Árvore sintática (AST) gerada
-import org.antlr.v4.runtime.tree.Trees; // Manipulação e extração do texto da árvore
+import java.io.IOException; // Define o tipo de dado para o fluxo de entrada
 
-// --- Importação do JAVA para tratamento de erros ---
-import java.io.IOException;
+import org.antlr.v4.runtime.CharStream; // Ferramenta que lê o arquivo de texto e transforma em CharStram
+import org.antlr.v4.runtime.CharStreams; // Armazena os tokens gerados pelo Lexer
+import org.antlr.v4.runtime.CommonTokenStream; // Guarda o Tipo, Texto e Linha
+import org.antlr.v4.runtime.Token; // Árvore sintática (AST) gerada
+import org.antlr.v4.runtime.tree.ParseTree; // Manipulação e extração do texto da árvore
+import org.antlr.v4.runtime.tree.Trees;
 
 public class Main {
     public static void main(String[] args) {
@@ -81,6 +80,18 @@ public class Main {
             semantico.visit(tree); // Roda verificador
 
             System.out.println("=== FIM DA COMPILAÇÃO ===");
+
+            // ETAPA 3: GERAÇÃO DE CÓDIGO INTERMEDIÁRIO (NOVO!)
+            System.out.println("=== GERAÇÃO DE CÓDIGO INTERMEDIÁRIO (TAC) ===");
+
+            GeradorCodigoIntermediario gerador = new GeradorCodigoIntermediario();
+            gerador.visit(tree);
+
+            System.out.println("--- CÓDIGO DE TRÊS ENDEREÇOS GERADO ---");
+            System.out.println(gerador.getCodigo());
+            System.out.println("---------------------------------------");
+
+            System.out.println("=== SUCESSO! ===");
 
         } catch (IOException e) {
             System.out.println("Erro ao ler arquivo: " + e.getMessage());
