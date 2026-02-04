@@ -42,14 +42,20 @@ public class GeradorCodigoIntermediario extends MiniLuaBaseVisitor<String> {
         return codigo.toString();
     }
 
-    // --- VISITANTES (Lógica de Tradução) ---
+    // --- VISITANTES ---
+
+    // 0. Declaração (int a;)
+    // Necessário para o compilador não quebrar quando encontrar "int x;"
+    @Override
+    public String visitCmdDecl(MiniLuaParser.CmdDeclContext ctx) {
+        return null;
+    }
 
     // 1. Atribuição (x = 10 + 2)
     @Override
     public String visitCmdAtrib(MiniLuaParser.CmdAtribContext ctx) {
         String variavel = ctx.IDENTIFICADOR().getText();
-        String expr = visit(ctx.expr()); // Visita a expressão e pega onde o resultado está (ex: t1)
-
+        String expr = visit(ctx.expr());
         emit(variavel + " = " + expr);
         return null;
     }
@@ -57,14 +63,13 @@ public class GeradorCodigoIntermediario extends MiniLuaBaseVisitor<String> {
     // 2. Operações Aritméticas (+, -, *, /)
     @Override
     public String visitExprAritmetica(MiniLuaParser.ExprAritmeticaContext ctx) {
-        String op1 = visit(ctx.expr(0)); // Pega o operando da esquerda (pode ser var, numero ou outra temp)
-        String op2 = visit(ctx.expr(1)); // Pega o operando da direita
+        String op1 = visit(ctx.expr(0));
+        String op2 = visit(ctx.expr(1));
         String operador = ctx.op.getText();
 
-        String temp = newTemp(); // Cria t1, t2...
+        String temp = newTemp();
         emit(temp + " = " + op1 + " " + operador + " " + op2);
-
-        return temp; // Retorna o nome da temporária para quem chamou
+        return temp;
     }
 
     // 3. Operações Relacionais (>, <, ==)
@@ -76,8 +81,66 @@ public class GeradorCodigoIntermediario extends MiniLuaBaseVisitor<String> {
 
         String temp = newTemp();
         emit(temp + " = " + op1 + " " + operador + " " + op2);
-
         return temp;
     }
-    
+
+    // 4. Parênteses
+    @Override
+    public String visitExprParenteses(MiniLuaParser.ExprParentesesContext ctx) {
+        return visit(ctx.expr());
+    }
+
+    // 5. Menos Unário (-5)
+    @Override
+    public String visitExprMenosUnario(MiniLuaParser.ExprMenosUnarioContext ctx) {
+        String expr = visit(ctx.expr());
+        String temp = newTemp();
+        emit(temp + " = -" + expr);
+        return temp;
+    }
+
+    // 6. IF / ELSE
+    @Override
+    public String visitCmdIf(MiniLuaParser.CmdIfContext ctx) {
+        String condicao = visit(ctx.expr());
+
+        String labelFalse = newLabel();
+        String labelEnd = newLabel();
+
+        // Se a condição for falsa, pula para o ELSE
+        emit("ifFalse " + condicao + " goto " + labelFalse);
+
+        // Bloco THEN
+        visit(ctx.comandos(0));
+        emit("goto " + labelEnd); // Pula o ELSE
+
+        // Bloco ELSE
+        emit(labelFalse + ":");
+        if (ctx.comandos(1) != null) {
+            visit(ctx.comandos(1));
+        }
+
+        emit(labelEnd + ":");
+        return null;
+    }
+
+    // 7. Print
+    @Override
+    public String visitCmdPrint(MiniLuaParser.CmdPrintContext ctx) {
+        String expr = visit(ctx.expr());
+        emit("param " + expr);
+        emit("call print, 1");
+        return null;
+    }
+
+    // 8. Fatores básicos
+    @Override
+    public String visitExprId(MiniLuaParser.ExprIdContext ctx) {
+        return ctx.IDENTIFICADOR().getText();
+    }
+
+    @Override
+    public String visitExprLiteral(MiniLuaParser.ExprLiteralContext ctx) {
+        return ctx.getText();
+    }
 }
